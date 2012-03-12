@@ -30,9 +30,15 @@ static void print_float(float val, float invalid, bool islatitude);
 void setup(){
     // set up the LCD's number of columns and rows: 
   lcd.begin(16, 2);
-  // initialize the serial communications:
-  nss.begin(4800);
   lcd.write("Howdy navigator?");
+  lcd.setCursor(0, 1);
+  // initialize the serial communications:
+  long baud = detRate(RXPIN);
+  lcd.write("Baudrate: ");
+  lcd.print(baud);
+  if (baud == 0)
+    baud = 4800;
+  nss.begin(baud);
 }
 
 void loop()
@@ -182,4 +188,38 @@ static bool feedgps()
   return false;
 }
 
+long detRate(int recpin)  // function to return valid received baud rate
+                          // Note that the serial monitor has no 600 baud option and 300 baud
+                          // doesn't seem to work with version 22 hardware serial library
+  {
+  long baud, rate = 10000, x;
+  for (int i = 0; i < 10; i++) {
+      x = pulseIn(recpin,LOW);   // measure the next zero bit width
+      rate = x < rate ? x : rate;
+  }
+  
+  if (rate < 12)
+      baud = 115200;
+      else if (rate < 20)
+      baud = 57600;
+      else if (rate < 29)
+      baud = 38400;
+      else if (rate < 40)
+      baud = 28800;
+      else if (rate < 60)
+      baud = 19200;
+      else if (rate < 80)
+      baud = 14400;
+      else if (rate < 150)
+      baud = 9600;
+      else if (rate < 300)
+      baud = 4800;
+      else if (rate < 600)
+      baud = 2400;
+      else if (rate < 1200)
+      baud = 1200;
+      else
+      baud = 0;  
+   return baud;
+  }
 
